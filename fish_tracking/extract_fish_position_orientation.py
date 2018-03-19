@@ -12,6 +12,8 @@ import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 import os
 import cv2
+import sys
+
 
 
 def get_fish_position_and_angle(frame, background, threshold, filter_width, display):
@@ -107,6 +109,13 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
     if ind_negative.sum() > ind_positive.sum():
         fish_orientation += np.pi
 
+    # make it degrees
+    fish_orientation = fish_orientation * 180 / np.pi
+
+    # put it in the right range
+    fish_orientation = (fish_orientation + 180) % 360 - 180
+
+
     # we are done. ;-)
 
     # if desired, display all the processing stages
@@ -115,8 +124,8 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
         stiched_images = np.concatenate((image, fish_image_thresholded, fish_image_blurred), axis=1)
         image_for_display = cv2.cvtColor(stiched_images.copy().astype(np.uint8), cv2.COLOR_GRAY2BGR)
         # draw into the frame for displaying
-        dy = int(np.cos(fish_orientation) * 10)
-        dx = int(np.sin(fish_orientation) * 10)
+        dy = int(np.cos(fish_orientation * np.pi / 180) * 10)
+        dx = int(np.sin(fish_orientation * np.pi / 180) * 10)
 
         print(fish_image_thresholded.dtype)
         cv2.line(image_for_display, (y, x), (y + dy, x + dx), (0, 0, 255), thickness=1)
@@ -124,7 +133,9 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
 
         image_for_display = cv2.resize(image_for_display, None, fx=0.5, fy=0.5)
         cv2.imshow("fish image", image_for_display)
-        cv2.waitKey(1)
+        if cv2.waitKey(1) == 27:
+            sys.exit()
+
 
         """
         pl.title("Stage 0: Original frame")
@@ -229,7 +240,9 @@ for fish_name in fish_names:
 
     # load the fish movie
     movie = imageio.get_reader(path)
+    dt = 1 / movie.get_meta_data()['fps']
 
+    ts = []
     xs = []
     ys = []
     fish_orientations = []
@@ -237,6 +250,7 @@ for fish_name in fish_names:
     frame_counter = 0
     for frame in movie:
         print("Analyzing", frame_counter)
+
         image = frame[:, :, 0]
         x, y, fish_orientation = get_fish_position_and_angle(image,
                                                              background,
@@ -244,12 +258,19 @@ for fish_name in fish_names:
                                                              filter_width = 2,
                                                              display=False)
 
-
+        ts.append(frame_counter * dt)
         xs.append(x)
         ys.append(y)
         fish_orientations.append(fish_orientation)
 
         frame_counter += 1
 
+        if frame_counter > 2000:
+            break
+
+    # determine the accumulated orientation
+    delta_orientations = (np.diff(fish_orientations) + 180) % 360 - 180
+    fish_accumulated_orientation = np.cumsum(delta_orientations)
+
     # Saving the data in the same folder and the same base file name as the fish movie
-    np.save(path[:-4] + "_extracted_x_y_ang.npy", np.c_[xs, ys, fish_orientations])
+    np.save(path[:-4] + "_extracted_x_y_ang.npy", np.c_[ts, xs, ys, fish_orientations, fish_accumulated_orientation])
