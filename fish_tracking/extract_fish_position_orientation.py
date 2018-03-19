@@ -133,6 +133,8 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
 
         image_for_display = cv2.resize(image_for_display, None, fx=0.8, fy=0.8)
         cv2.imshow("fish image", image_for_display)
+
+        cv2.imshow("fish roi", fish_roi_cutout.astype(np.uint8))
         if cv2.waitKey(1) == 27:
             sys.exit()
 
@@ -224,10 +226,10 @@ print("Fish angle in image (in degrees): ", fish_angle * 180/np.pi)
 # Analyzing the fish list
 
 # this is the path where all the fish movies reside
-root_path = r"/Users/arminbahl/Dropbox/fish_traking_yasuko"
+root_path = r"D:\Zebrafish"
 
 # a list of all the fish where the background should be calculated
-fish_names = ["180207_15.mov"]
+fish_names = ["fc2_save_2018-02-26-150603.avi"]
 
 # loop through all those fish names, and calculate their backgroud images
 for fish_name in fish_names:
@@ -267,7 +269,7 @@ for fish_name in fish_names:
 
         frame_counter += 1
 
-        if frame_counter > 500:
+        if frame_counter > 2000:
             break
 
 

@@ -1,9 +1,10 @@
 import numpy as np
 import os
 import pylab as pl
-root_path = r"/Users/arminbahl/Dropbox/fish_traking_yasuko"
+root_path = r"D:\Zebrafish"
 
-fish_names = ["180207_15.mov"]
+# a list of all the fish where the background should be calculated
+fish_names = ["fc2_save_2018-02-26-150603.avi"]
 
 for fish_name in fish_names:
     path = os.path.join(root_path, fish_name)[:-4] + "_extracted_x_y_ang.npy"

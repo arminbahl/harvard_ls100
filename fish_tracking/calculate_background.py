@@ -12,12 +12,13 @@ import imageio                  # this library allows us to load movies of vario
 import numpy as np              # this is the standard python library for doing data data analysis of matrices
 import os                       # this is a helper library for the operating system, which allows to concatenate a path, for example
 from scipy.stats import mode    # scipy included many functions for statistics, including a function for mode calculation
+imageio.plugins.ffmpeg.download()
 
 # this is the path where all the fish movies reside
-root_path = r"/Users/arminbahl/Dropbox/fish_traking_yasuko"
+root_path = r"D:\Zebrafish"
 
 # a list of all the fish where the background should be calculated
-fish_names = ["180207_15.mov"]
+fish_names = ["fc2_save_2018-02-26-150603.avi"]
 
 # loop through all those fish names, and calculate their backgroud images
 for fish_name in fish_names:
