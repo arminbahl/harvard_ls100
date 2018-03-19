@@ -11,7 +11,8 @@ for fish_name in fish_names:
 
     print(fish_data.shape)
 
-    pl.plot(fish_data[:,0], fish_data[:,1])
+    pl.plot(fish_data[:,1], fish_data[:,2])
     pl.show()
-    pl.plot(fish_data[:,2] * 180/np.pi)
+    pl.plot(fish_data[:, 0], fish_data[:, 3])
+    pl.plot(fish_data[:, 0], fish_data[:, 4])
     pl.show()

@@ -5,8 +5,8 @@ Created on Mon Feb 26 15:15:30 2018
 """
 
 import imageio
-#import matplotlib
-#matplotlib.use("qt5agg")
+import matplotlib
+matplotlib.use("qt5agg")
 import pylab as pl
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
@@ -113,7 +113,7 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
     fish_orientation = fish_orientation * 180 / np.pi
 
     # put it in the right range
-    fish_orientation = (fish_orientation + 180) % 360 - 180
+    fish_orientation = (fish_orientation + 360) % 360
 
 
     # we are done. ;-)
@@ -124,14 +124,14 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
         stiched_images = np.concatenate((image, fish_image_thresholded, fish_image_blurred), axis=1)
         image_for_display = cv2.cvtColor(stiched_images.copy().astype(np.uint8), cv2.COLOR_GRAY2BGR)
         # draw into the frame for displaying
-        dy = int(np.cos(fish_orientation * np.pi / 180) * 10)
-        dx = int(np.sin(fish_orientation * np.pi / 180) * 10)
+        dy = int(np.cos(fish_orientation * np.pi / 180) * 20)
+        dx = int(np.sin(fish_orientation * np.pi / 180) * 20)
 
         print(fish_image_thresholded.dtype)
-        cv2.line(image_for_display, (y, x), (y + dy, x + dx), (0, 0, 255), thickness=1)
+        cv2.line(image_for_display, (y, x), (y + dy, x + dx), (0, 255, 0), thickness=2)
         cv2.circle(image_for_display, (y + dy, x + dx), 3, (0, 0, 255), thickness=-1)
 
-        image_for_display = cv2.resize(image_for_display, None, fx=0.5, fy=0.5)
+        image_for_display = cv2.resize(image_for_display, None, fx=0.8, fy=0.8)
         cv2.imshow("fish image", image_for_display)
         if cv2.waitKey(1) == 27:
             sys.exit()
@@ -186,7 +186,7 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
 
         ################
         pl.title("Displaying results")
-        dx = np.sin(fish_orientation)*scale*2
+        dx = np.cps(fish_orientation)*scale*2
         dy = np.cos(fish_orientation)*scale*2
 
         # original fish coordinates
@@ -197,24 +197,26 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
         pl.show()
         """
 
-    # swap y, and x,
-    return int(y), int(x), fish_orientation
 
-# display an example fish
-#
-# # load the background subtracted image (or loop through a movie)
-# print("Analyzing test fish.....")
-#
-# fish_image = imageio.imread("fish.png")[:, :, 0]
-# background = np.zeros_like(fish_image)
-#
-# x, y, fish_angle = get_fish_position_and_angle(fish_image,
-#                                                background,
-#                                                display=True)
-#
-# print("Fish position in image: ", (x, y))
-# print("Fish angle in image (in degrees): ", fish_angle * 180/np.pi)
-#
+    # swap y, and x,
+    return int(y), int(x), 360-fish_orientation
+
+#display an example fish
+"""
+# load the background subtracted image (or loop through a movie)
+print("Analyzing test fish.....")
+
+image = imageio.imread("fish.png")[:, :, 0]
+background = np.zeros_like(image)
+
+x, y, fish_angle = get_fish_position_and_angle(image, background,
+                                                             threshold = 35,
+                                                             filter_width = 2,
+                                                             display=True)
+
+print("Fish position in image: ", (x, y))
+print("Fish angle in image (in degrees): ", fish_angle * 180/np.pi)
+"""
 
 
 
@@ -265,12 +267,25 @@ for fish_name in fish_names:
 
         frame_counter += 1
 
-        #if frame_counter > 2000:
-        #    break
+        if frame_counter > 500:
+            break
+
 
     # determine the accumulated orientation
-    delta_orientations = (np.diff(fish_orientations) + 180) % 360 - 180
-    fish_accumulated_orientation = np.cumsum(delta_orientations)
+    delta_orientations = np.diff(fish_orientations)
+    delta_orientations = np.nan_to_num(delta_orientations)
+
+    ind1 = np.where(delta_orientations > 300)
+    ind2 = np.where(delta_orientations < -300)
+
+    delta_orientations[ind1] = delta_orientations[ind1] - 360
+    delta_orientations[ind2] = delta_orientations[ind2] + 360
+
+    fish_accumulated_orientation = np.cumsum(np.r_[fish_orientations[0], delta_orientations])
+
+    #pl.plot(ts, fish_orientations)
+    #pl.plot(ts, fish_accumulated_orientation)
+    #pl.show()
 
     # Saving the data in the same folder and the same base file name as the fish movie
     np.save(path[:-4] + "_extracted_x_y_ang.npy", np.c_[ts, xs, ys, fish_orientations, fish_accumulated_orientation])
