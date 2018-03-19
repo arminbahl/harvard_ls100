@@ -14,10 +14,10 @@ import os                       # this is a helper library for the operating sys
 from scipy.stats import mode    # scipy included many functions for statistics, including a function for mode calculation
 
 # this is the path where all the fish movies reside
-root_path = r"C:\Users\LS100\Desktop\fish_movies"
+root_path = r"/Users/arminbahl/Dropbox/fish_traking_yasuko"
 
 # a list of all the fish where the background should be calculated
-fish_names = ["2min.avi"]
+fish_names = ["180207_15.mov"]
 
 # loop through all those fish names, and calculate their backgroud images
 for fish_name in fish_names:
@@ -38,21 +38,21 @@ for fish_name in fish_names:
 
         print("Loading frame", counter)
 
-        # Here, we grab only every 5th frame from the movie for background substraction
+        # Here, we grab only every n th frame from the movie for background substraction
         # the background.
         # for large long movies, you should take even less frames
-        if counter % 5:
+        if counter % 50 == 0:
             list_of_selected_frames.append(frame[:, :, 0])
 
         counter += 1
-
+    print(len(list_of_selected_frames))
     # the mode is the best function to calculate a background of a movie,
     # as it find the most often occuring pixel value at a given location
     # Hence, when a fish swims through the background, it does not change that value
     # the mean instead would change, and, to some better lesser extent, also the median
     modal_values, modal_count = mode(list_of_selected_frames, axis=0)
-
+    #print(modal_values.shape, modal_values.dtype)
     # This saves the background as both a photo to look at, and as an array
     # to be used by the subtraction program.
-    imageio.imwrite(path[:-4] + "_background.png", modal_values)
-    np.save(path[:-4] + "_background.npy", modal_values)
+    imageio.imwrite(path[:-4] + "_background.png", modal_values[0])
+    np.save(path[:-4] + "_background.npy", modal_values[0])

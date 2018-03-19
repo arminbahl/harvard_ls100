@@ -11,9 +11,10 @@ import pylab as pl
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 import os
+import cv2
 
 
-def get_fish_position_and_angle(frame, background, display):
+def get_fish_position_and_angle(frame, background, threshold, filter_width, display):
 
     # we substract the background and frame,
     # the fish is normally darker than the background, so we take the absolute value to
@@ -25,13 +26,13 @@ def get_fish_position_and_angle(frame, background, display):
 
     # threshold, play around with the tresholding paramater for optimal results
     fish_image_thresholded = background_substracted_image.copy()
-    fish_image_thresholded[fish_image_thresholded < 15] = 0
-    fish_image_thresholded[fish_image_thresholded >= 15] = 255
+    fish_image_thresholded[fish_image_thresholded < threshold] = 0
+    fish_image_thresholded[fish_image_thresholded >= threshold] = 255
 
     # apply a weak gaussian blur to the thresholded image to get rid of noisy pixels
     # play around with the standard deviation for optimal results, normally, if little noise
     # use small values
-    fish_image_blurred = gaussian_filter(fish_image_thresholded, (2, 2))
+    fish_image_blurred = gaussian_filter(fish_image_thresholded, (filter_width, filter_width))
 
     # find the position of the maximum with
     x, y = np.unravel_index(np.argmax(fish_image_blurred), fish_image_blurred.shape)
@@ -110,6 +111,22 @@ def get_fish_position_and_angle(frame, background, display):
 
     # if desired, display all the processing stages
     if display:
+
+        stiched_images = np.concatenate((image, fish_image_thresholded, fish_image_blurred), axis=1)
+        image_for_display = cv2.cvtColor(stiched_images.copy().astype(np.uint8), cv2.COLOR_GRAY2BGR)
+        # draw into the frame for displaying
+        dy = int(np.cos(fish_orientation) * 10)
+        dx = int(np.sin(fish_orientation) * 10)
+
+        print(fish_image_thresholded.dtype)
+        cv2.line(image_for_display, (y, x), (y + dy, x + dx), (0, 0, 255), thickness=1)
+        cv2.circle(image_for_display, (y + dy, x + dx), 3, (0, 0, 255), thickness=-1)
+
+        image_for_display = cv2.resize(image_for_display, None, fx=0.5, fy=0.5)
+        cv2.imshow("fish image", image_for_display)
+        cv2.waitKey(1)
+
+        """
         pl.title("Stage 0: Original frame")
         pl.imshow(frame, cmap='gray')
         pl.show()
@@ -167,24 +184,25 @@ def get_fish_position_and_angle(frame, background, display):
         pl.plot([x_cutout + dx], [y_cutout + dy], 'o')
         pl.plot([x_cutout, x_cutout + dx], [y_cutout, y_cutout + dy])
         pl.show()
+        """
 
-    return x, y, fish_orientation
+    return int(x), int(y), fish_orientation
 
 # display an example fish
-
-# load the background subtracted image (or loop through a movie)
-print("Analyzing test fish.....")
-
-fish_image = imageio.imread("fish.png")[:, :, 0]
-background = np.zeros_like(fish_image)
-
-x, y, fish_angle = get_fish_position_and_angle(fish_image,
-                                               background,
-                                               display=True)
-
-print("Fish position in image: ", (x, y))
-print("Fish angle in image (in degrees): ", fish_angle * 180/np.pi)
-
+#
+# # load the background subtracted image (or loop through a movie)
+# print("Analyzing test fish.....")
+#
+# fish_image = imageio.imread("fish.png")[:, :, 0]
+# background = np.zeros_like(fish_image)
+#
+# x, y, fish_angle = get_fish_position_and_angle(fish_image,
+#                                                background,
+#                                                display=True)
+#
+# print("Fish position in image: ", (x, y))
+# print("Fish angle in image (in degrees): ", fish_angle * 180/np.pi)
+#
 
 
 
@@ -192,10 +210,10 @@ print("Fish angle in image (in degrees): ", fish_angle * 180/np.pi)
 # Analyzing the fish list
 
 # this is the path where all the fish movies reside
-root_path = r"C:\Users\LS100\Desktop\fish_movies"
+root_path = r"/Users/arminbahl/Dropbox/fish_traking_yasuko"
 
 # a list of all the fish where the background should be calculated
-fish_names = ["2min.avi"]
+fish_names = ["180207_15.mov"]
 
 # loop through all those fish names, and calculate their backgroud images
 for fish_name in fish_names:
@@ -217,9 +235,13 @@ for fish_name in fish_names:
 
     for frame in movie:
 
-        x, y, fish_orientation = get_fish_position_and_angle(frame[:, :, 0],
+        image = frame[:, :, 0]
+        x, y, fish_orientation = get_fish_position_and_angle(image,
                                                              background,
-                                                             display=False)
+                                                             threshold = 35,
+                                                             filter_width = 2,
+                                                             display=True)
+
 
         xs.append(x)
         ys.append(y)
