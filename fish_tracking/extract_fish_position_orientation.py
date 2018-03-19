@@ -186,7 +186,8 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
         pl.show()
         """
 
-    return int(x), int(y), fish_orientation
+    # swap y, and x,
+    return int(y), int(x), fish_orientation
 
 # display an example fish
 #
@@ -233,19 +234,22 @@ for fish_name in fish_names:
     ys = []
     fish_orientations = []
 
+    frame_counter = 0
     for frame in movie:
-
+        print("Analyzing", frame_counter)
         image = frame[:, :, 0]
         x, y, fish_orientation = get_fish_position_and_angle(image,
                                                              background,
                                                              threshold = 35,
                                                              filter_width = 2,
-                                                             display=True)
+                                                             display=False)
 
 
         xs.append(x)
         ys.append(y)
         fish_orientations.append(fish_orientation)
+
+        frame_counter += 1
 
     # Saving the data in the same folder and the same base file name as the fish movie
     np.save(path[:-4] + "_extracted_x_y_ang.npy", np.c_[xs, ys, fish_orientations])
