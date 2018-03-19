@@ -265,8 +265,8 @@ for fish_name in fish_names:
 
         frame_counter += 1
 
-        if frame_counter > 2000:
-            break
+        #if frame_counter > 2000:
+        #    break
 
     # determine the accumulated orientation
     delta_orientations = (np.diff(fish_orientations) + 180) % 360 - 180
