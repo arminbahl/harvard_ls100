@@ -1,17 +1,56 @@
 """
-Created on Mon Feb 26 15:15:30 2018
-
 @author: The students of spring semester 2018 LS100
 """
 
-import imageio
-import matplotlib
-matplotlib.use("qt5agg")
+import imageio                  # this library allows us to load movies of various compression formats
+import numpy as np              # this is the standard python library for doing data data analysis of matrices
+import os                       # this is a helper library for the operating system, which allows to concatenate a path, for example
+from scipy.stats import mode    # scipy included many functions for statistics, including a function for mode calculation
 import pylab as pl
-import numpy as np
-import os
 import cv2
 import sys
+
+#imageio.plugins.ffmpeg.download()
+
+def calculate_background(root_path, fish_names):
+    # loop through all those fish names, and calculate their backgroud images
+    for fish_name in fish_names:
+
+        print("Calculating the background image for fish", fish_name)
+
+        # concatenate the root path, and the fish name
+        path = os.path.join(root_path, fish_name)
+
+        # load the fish movie
+        movie = imageio.get_reader(path)
+
+        # Initialize a counter so that we can create the background based on every 5th
+        # frame, in order to save memory.
+        list_of_selected_frames = []
+
+        for counter, frame in enumerate(movie):
+
+            print("Loading frame", counter)
+
+            # Here, we grab only every n th frame from the movie for background substraction
+            # the background.
+            # for large long movies, you should take even less frames
+            if counter % 50 == 0:
+                list_of_selected_frames.append(frame[:, :, 0])
+
+        print("Performing mode calculation on ", len(list_of_selected_frames), "frames ...")
+
+        # the mode is the best function to calculate a background of a movie,
+        # as it find the most often occurring pixel value at a given location
+        # Hence, when a fish swims through the background, it does not change that value
+        # the mean instead would change, and, to some better lesser extent, also the median
+        modal_values, modal_count = mode(list_of_selected_frames, axis=0)
+
+        # This saves the background as both a photo to look at, and as an array
+        # to be used by the subtraction program.
+        imageio.imwrite(path[:-4] + "_background.png", modal_values[0])
+        np.save(path[:-4] + "_background.npy", modal_values[0])
+
 
 def get_fish_position_and_angle(frame, background, threshold, filter_width, display):
 
@@ -78,6 +117,7 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
     hull_moved[:, :, 0] = hull_moved[:, :, 0] - hull[:, 0, 0].mean()
     hull_moved[:, :, 1] = hull_moved[:, :, 1] - hull[:, 0, 1].mean()
 
+    # see https://en.wikipedia.org/wiki/Image_moment
     moments = cv2.moments(hull_moved)
     mu20 = moments["mu20"] / moments["m00"]
     mu02 = moments["mu02"] / moments["m00"]
@@ -128,7 +168,7 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
     # swap y, and x,
     return int(y), int(frame.shape[0]-x), (-fish_orientation*180/np.pi + 360) % 360
 
-def analyze_fishes(root_path, fish_names, threshold, filter_width, display):
+def extract_position_orientation(root_path, fish_names, threshold, filter_width, display):
 
     # loop through all those fish names, and calculate their backgroud images
     for fish_name in fish_names:
@@ -206,11 +246,3 @@ def analyze_fishes(root_path, fish_names, threshold, filter_width, display):
         pl.legend()
 
         pl.savefig(path[:-4] + "_extracted_x_y_ang.png")
-
-# this is the path where all the fish movies reside
-root_path = r"/Users/arminbahl/Desktop/ls100"
-
-# a list of all the fish where the background should be calculated
-fish_names = ["fish8_0316_20866_7dpf.avi"]
-
-analyze_fishes(root_path, fish_names=fish_names, threshold=20, filter_width=5, display=False) # filter_width has to be odd
