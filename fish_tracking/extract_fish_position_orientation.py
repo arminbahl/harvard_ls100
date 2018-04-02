@@ -15,15 +15,14 @@ import sys
 
 def get_fish_position_and_angle(frame, background, threshold, filter_width, display):
 
-    # we substract the background and frame,
+    # we subtract the background and frame,
     # the fish is normally darker than the background, so we take the absolute value to
     # make the fish the brightest area in the image
     # because movie and background are likely of type unsigned int, for the sake
-    # of the substraction, make them signed integers
+    # of the subtraction, make them signed integers
     background_substracted_image = np.abs(background.astype(np.int) - frame.astype(np.int)).astype(np.uint8)
 
-    # threshold, play around with the tresholding paramater for optimal results
-    #print(background_substracted_image.shape, background_substracted_image.dtype)
+    # threshold, play around with the thresholding parameter for optimal results
     ret, fish_image_thresholded = cv2.threshold(background_substracted_image, threshold, 255, cv2.THRESH_BINARY)
 
     # apply a weak gaussian blur to the thresholded image to get rid of noisy pixels
@@ -129,7 +128,7 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
     # swap y, and x,
     return int(y), int(frame.shape[0]-x), (-fish_orientation*180/np.pi + 360) % 360
 
-def analyze_fishes(root_path, fish_names):
+def analyze_fishes(root_path, fish_names, threshold, filter_width, display):
 
     # loop through all those fish names, and calculate their backgroud images
     for fish_name in fish_names:
@@ -157,17 +156,14 @@ def analyze_fishes(root_path, fish_names):
             image = frame[:, :, 0]
             x, y, fish_orientation = get_fish_position_and_angle(image,
                                                                  background,
-                                                                 threshold=20,
-                                                                 filter_width=5,  # has to be odd
-                                                                 display=True)
+                                                                 threshold=threshold,
+                                                                 filter_width=filter_width,
+                                                                 display=display)
 
             ts.append(frame_counter * dt)
             xs.append(x)
             ys.append(y)
             fish_orientations.append(fish_orientation)
-
-            if frame_counter > 2000:
-                break
 
         # determine the accumulated orientation
         delta_orientations = np.diff(fish_orientations)
@@ -211,11 +207,10 @@ def analyze_fishes(root_path, fish_names):
 
         pl.savefig(path[:-4] + "_extracted_x_y_ang.png")
 
-
 # this is the path where all the fish movies reside
 root_path = r"/Users/arminbahl/Desktop/ls100"
 
 # a list of all the fish where the background should be calculated
 fish_names = ["fish8_0316_20866_7dpf.avi"]
 
-analyze_fishes(root_path, fish_names=fish_names)
+analyze_fishes(root_path, fish_names=fish_names, threshold=20, filter_width=5, display=False) # filter_width has to be odd
