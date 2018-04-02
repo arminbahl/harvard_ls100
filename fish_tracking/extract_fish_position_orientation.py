@@ -86,11 +86,11 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
 
     fish_orientation = 0.5*np.arctan2(2 * mu11, mu20 - mu02)
 
-    M = cv2.getRotationMatrix2D((200 / 2, 200 / 2), fish_orientation * 180/np.pi, 1)
+    M = cv2.getRotationMatrix2D((100, 100), fish_orientation * 180/np.pi, 1)
 
     dummy_image_original = np.zeros((200, 200), dtype=np.uint8)
 
-    cv2.drawContours(dummy_image_original, [hull_moved+100], 0, 255, cv2.FILLED, 8)
+    cv2.drawContours(dummy_image_original, [hull_moved+100], 0, 255, cv2.FILLED)
     dummy_image_rotated = cv2.warpAffine(dummy_image_original, M, (200, 200))
 
     fish_width = np.sum(dummy_image_rotated.copy().astype(np.int), axis=0)
@@ -100,115 +100,117 @@ def get_fish_position_and_angle(frame, background, threshold, filter_width, disp
 
     if display:
         img = np.zeros((200, 200)).astype(np.uint8)
-        cv2.drawContours(img, [hull_moved + 100], 0, 128)
+        img = cv2.cvtColor(img.copy().astype(np.uint8), cv2.COLOR_GRAY2BGR)
+
+        cv2.drawContours(img, [hull_moved + 100], 0, (255, 255, 255))
 
         dy = int(np.cos(fish_orientation) * 20)
         dx = int(np.sin(fish_orientation) * 20)
-        cv2.line(img, (100, 100), (100+dy, 100+dx), 255, thickness=2)
-        cv2.imshow("test2", img)
-        cv2.waitKey(1)
+        cv2.line(img, (100, 100), (100+dy, 100+dx), (0, 255, 0), thickness=2)
 
-        stiched_images = np.concatenate((image, fish_image_thresholded, fish_image_blurred), axis=1)
-        image_for_display = cv2.cvtColor(stiched_images.copy().astype(np.uint8), cv2.COLOR_GRAY2BGR)
+        img2 = np.concatenate((frame, fish_image_thresholded, fish_image_blurred), axis=1)
+        img2 = cv2.cvtColor(img2.copy().astype(np.uint8), cv2.COLOR_GRAY2BGR)
+
         # draw into the frame for displaying
         dy = int(np.cos(fish_orientation) * 20)
         dx = int(np.sin(fish_orientation) * 20)
 
-        cv2.line(image_for_display, (y, x), (y + dy, x + dx), (0, 255, 0), thickness=2)
-        cv2.circle(image_for_display, (y + dy, x + dx), 3, (0, 0, 255), thickness=-1)
+        cv2.line(img2, (y, x), (y + dy, x + dx), (0, 255, 0), thickness=2)
+        cv2.circle(img2, (y + dy, x + dx), 3, (0, 0, 255), thickness=-1)
 
-        image_for_display = cv2.resize(image_for_display, None, fx=0.8, fy=0.8)
+        img2 = cv2.resize(img2, (600, 200))
+
+        image_for_display = np.concatenate((img2, img), axis=1)
         cv2.imshow("fish image", image_for_display)
 
         if cv2.waitKey(1) == 27:
             sys.exit()
 
-
-        """
-        pl.title("Stage 0: Original frame")
-        pl.imshow(frame, cmap='gray')
-        pl.show()
-
-        ####
-        pl.title("Stage 1: Background substracted frame")
-        pl.imshow(background_substracted_image, cmap='gray')
-        pl.show()
-
-        ####
-        pl.title("Stage 2: Thresholding")
-        pl.imshow(fish_image_thresholded, cmap='gray')
-        pl.show()
-
-        ####
-        pl.title("Stage 3: Blurring")
-        pl.imshow(fish_image_blurred, cmap='gray')
-        pl.show()
-
-        ####
-        pl.title("Stage 4: Cut out region of interest")
-        pl.imshow(fish_roi_cutout, cmap='gray')
-        pl.show()
-        
-        ####
-        # original fish coordinates and center-moved corrdinates
-        pl.title("Stage 5: Extract coordinates and move to center of mass")
-        #pl.plot(coordinates_original_cutout[0], coordinates_original_cutout[1], '.')
-        pl.plot(coordinates_moved_cutout[0], coordinates_moved_cutout[1], '.')
-
-        # the principle axes of the new coordinate system
-        scale = 20
-        pl.plot([x_v1 * -scale * 2, x_v1 * scale * 2],
-                [y_v1 * -scale * 2, y_v1 * scale * 2], color='red')
-
-        pl.plot([x_v2 * -scale, x_v2 * scale],
-                [y_v2 * -scale, y_v2 * scale], color='blue')
-
-        pl.show()
-        
-        pl.title("Stage 6: Rotate and determine number of points below and above zero")
-        pl.plot(coordinates_rotated_cutout[0], coordinates_rotated_cutout[1], '.')
-        pl.plot(coordinates_rotated_cutout[0][ind_positive], coordinates_rotated_cutout[1][ind_positive], '+')  # color the positive ones
-        pl.plot(coordinates_rotated_cutout[0][ind_negative], coordinates_rotated_cutout[1][ind_negative], '_')  # color the negative ones
-        pl.show()
-
-        ################
-        pl.title("Displaying results")
-        dx = np.cps(fish_orientation)*scale*2
-        dy = np.cos(fish_orientation)*scale*2
-
-        # original fish coordinates
-        pl.plot(coordinates_original_cutout[0], coordinates_original_cutout[1], '.')
-        pl.plot([x_cutout], [y_cutout], 'o')
-        pl.plot([x_cutout + dx], [y_cutout + dy], 'o')
-        pl.plot([x_cutout, x_cutout + dx], [y_cutout, y_cutout + dy])
-        pl.show()
-        """
-
-
     # swap y, and x,
-    return int(y), int(frame.shape[0]-x), -fish_orientation*180/np.pi
+    return int(y), int(frame.shape[0]-x), (-fish_orientation*180/np.pi + 360) % 360
 
-#display an example fish
-"""
-# load the background subtracted image (or loop through a movie)
-print("Analyzing test fish.....")
+def analyze_fishes(root_path, fish_names):
 
-image = imageio.imread("fish.png")[:, :, 0]
-background = np.zeros_like(image)
+    # loop through all those fish names, and calculate their backgroud images
+    for fish_name in fish_names:
 
-x, y, fish_angle = get_fish_position_and_angle(image, background,
-                                                             threshold = 35,
-                                                             filter_width = 2,
-                                                             display=True)
+        print("Extracting position and orientation information for fish", fish_name)
 
-print("Fish position in image: ", (x, y))
-print("Fish angle in image (in degrees): ", fish_angle * 180/np.pi)
-"""
+        # concatenate the root path, and the fish name
+        path = os.path.join(root_path, fish_name)
 
+        # load the background
+        background = np.load(path[:-4] + "_background.npy")
 
+        # load the fish movie
+        movie = imageio.get_reader(path)
+        dt = 1 / movie.get_meta_data()['fps']
 
-###########################
-# Analyzing the fish list
+        ts = []
+        xs = []
+        ys = []
+        fish_orientations = []
+
+        for frame_counter, frame in enumerate(movie):
+            print("Analyzing", frame_counter)
+
+            image = frame[:, :, 0]
+            x, y, fish_orientation = get_fish_position_and_angle(image,
+                                                                 background,
+                                                                 threshold=20,
+                                                                 filter_width=5,  # has to be odd
+                                                                 display=True)
+
+            ts.append(frame_counter * dt)
+            xs.append(x)
+            ys.append(y)
+            fish_orientations.append(fish_orientation)
+
+            if frame_counter > 2000:
+                break
+
+        # determine the accumulated orientation
+        delta_orientations = np.diff(fish_orientations)
+        delta_orientations = np.nan_to_num(delta_orientations)
+
+        ind1 = np.where(delta_orientations > 250)
+        ind2 = np.where(delta_orientations < -250)
+
+        delta_orientations[ind1] = delta_orientations[ind1] - 360
+        delta_orientations[ind2] = delta_orientations[ind2] + 360
+
+        fish_accumulated_orientation = np.cumsum(np.r_[fish_orientations[0], delta_orientations])
+
+        # Saving the data in the same folder and the same base file name as the fish movie
+        fish_data = np.c_[ts, xs, ys, fish_orientations, fish_accumulated_orientation]
+        np.save(path[:-4] + "_extracted_x_y_ang.npy", fish_data)
+
+        # save a plot to easily check the quality of the tracking
+        pl.figure(figsize=(10, 5))
+        pl.subplot(121)
+        an = np.linspace(0, 2 * np.pi, 100)
+
+        pl.plot(350 + 350 * np.cos(an), 350 + 350 * np.sin(an), label='Dish boundary')
+        pl.plot(fish_data[:, 1], fish_data[:, 2], label='Trajectory')
+        pl.plot(fish_data[0, 1], fish_data[0, 2], 'o', label='Start')
+        pl.plot(fish_data[-1, 1], fish_data[-1, 2], 'o', label='End')
+
+        pl.xlim(0, 700)
+        pl.ylim(0, 700)
+        pl.axis('equal')
+        pl.xlabel("x (Pixel)")
+        pl.ylabel("y (Pixel)")
+        pl.legend()
+
+        pl.subplot(122)
+        pl.xlabel("Time (s)")
+        pl.ylabel("Angle (deg)")
+        pl.plot(fish_data[:, 0], fish_data[:, 3], label='Raw angle')
+        pl.plot(fish_data[:, 0], fish_data[:, 4], label='Accumulated angle change')
+        pl.legend()
+
+        pl.savefig(path[:-4] + "_extracted_x_y_ang.png")
+
 
 # this is the path where all the fish movies reside
 root_path = r"/Users/arminbahl/Desktop/ls100"
@@ -216,63 +218,4 @@ root_path = r"/Users/arminbahl/Desktop/ls100"
 # a list of all the fish where the background should be calculated
 fish_names = ["fish8_0316_20866_7dpf.avi"]
 
-# loop through all those fish names, and calculate their backgroud images
-for fish_name in fish_names:
-
-    print("Extracting position and orientation information for fish", fish_name)
-
-    # concatenate the root path, and the fish name
-    path = os.path.join(root_path, fish_name)
-
-    # load the background
-    background = np.load(path[:-4] + "_background.npy")
-
-    # load the fish movie
-    movie = imageio.get_reader(path)
-    dt = 1 / movie.get_meta_data()['fps']
-
-    ts = []
-    xs = []
-    ys = []
-    fish_orientations = []
-
-    frame_counter = 0
-    for frame in movie:
-        print("Analyzing", frame_counter)
-
-        image = frame[:, :, 0]
-        x, y, fish_orientation = get_fish_position_and_angle(image,
-                                                             background,
-                                                             threshold=20,
-                                                             filter_width=5, # has to be odd
-                                                             display=False)
-
-        ts.append(frame_counter * dt)
-        xs.append(x)
-        ys.append(y)
-        fish_orientations.append(fish_orientation)
-
-        frame_counter += 1
-
-        if frame_counter > 2000:
-            break
-
-
-    # determine the accumulated orientation
-    delta_orientations = np.diff(fish_orientations)
-    delta_orientations = np.nan_to_num(delta_orientations)
-
-    ind1 = np.where(delta_orientations > 300)
-    ind2 = np.where(delta_orientations < -300)
-
-    delta_orientations[ind1] = delta_orientations[ind1] - 360
-    delta_orientations[ind2] = delta_orientations[ind2] + 360
-
-    fish_accumulated_orientation = np.cumsum(np.r_[fish_orientations[0], delta_orientations])
-
-    #pl.plot(ts, fish_orientations)
-    #pl.plot(ts, fish_accumulated_orientation)
-    #pl.show()
-
-    # Saving the data in the same folder and the same base file name as the fish movie
-    np.save(path[:-4] + "_extracted_x_y_ang.npy", np.c_[ts, xs, ys, fish_orientations, fish_accumulated_orientation])
+analyze_fishes(root_path, fish_names=fish_names)

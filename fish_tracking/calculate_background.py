@@ -34,8 +34,8 @@ for fish_name in fish_names:
     # Initialize a counter so that we can create the background based on every 5th
     # frame, in order to save memory.
     list_of_selected_frames = []
-    counter = 0
-    for frame in movie:
+
+    for counter, frame in enumerate(movie):
 
         print("Loading frame", counter)
 
@@ -45,14 +45,14 @@ for fish_name in fish_names:
         if counter % 50 == 0:
             list_of_selected_frames.append(frame[:, :, 0])
 
-        counter += 1
     print(len(list_of_selected_frames))
+
     # the mode is the best function to calculate a background of a movie,
-    # as it find the most often occuring pixel value at a given location
+    # as it find the most often occurring pixel value at a given location
     # Hence, when a fish swims through the background, it does not change that value
     # the mean instead would change, and, to some better lesser extent, also the median
     modal_values, modal_count = mode(list_of_selected_frames, axis=0)
-    #print(modal_values.shape, modal_values.dtype)
+
     # This saves the background as both a photo to look at, and as an array
     # to be used by the subtraction program.
     imageio.imwrite(path[:-4] + "_background.png", modal_values[0])
