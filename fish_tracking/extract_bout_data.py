@@ -29,59 +29,85 @@ def find_events(data, dt, window, start_threshold, end_threshold):
 
 fish_data = np.load("/Users/arminbahl/Desktop/fish15_0321_tlab_5dpf_extracted_x_y_ang.npy")
 
-print(fish_data.shape)
+print(".........................")
+print("This is fish {}".format(fish_data))
+print("Data shape", fish_data.shape)
 
 t = fish_data[:, 0]
 x = fish_data[:, 1]
 y = fish_data[:, 2]
 ang = fish_data[:, 3]
 accummulated_ang = fish_data[:, 4]
+accumulated_path = np.sqrt(np.diff(x)**2 + np.diff(y)**2).cumsum()
 dt = np.diff(t).mean()
 
+
+# find events
 
 data_rolling_var, event_start_indices, event_end_indices = \
     find_events(accummulated_ang, dt, window=0.05, start_threshold=10, end_threshold=5)
 
+# Comment: event_end_indices is faulty, don't use this for now ....
+
 bout_start_times = t[event_start_indices]
-angles_before_bout = accummulated_ang[event_start_indices - int(0.02/dt)]
-angles_after_bout = accummulated_ang[event_start_indices + int(0.5/dt)]
 
-angle_changes = angles_after_bout-angles_before_bout
+bout_angle_changes = accummulated_ang[event_start_indices + int(0.5/dt)] - \
+                     accummulated_ang[event_start_indices - int(0.02/dt)]
 
-print(np.nanmedian(np.abs(angle_changes)))
-
-a,b = np.histogram(angle_changes, bins=np.linspace(-60, 60, 30))
-pl.figure()
-pl.plot(b[1:], a)
-pl.show()
-n
-print(angles_before_bout)
-asdf
-
-
-bout_bout_end_times = t[event_end_indices]
-
+bout_path_changes = accumulated_path[event_start_indices + int(0.5/dt)] - \
+                    accumulated_path[event_start_indices - int(0.02/dt)]
 
 interbout_intervals = np.diff(bout_start_times)
 
+
+# Plot and extract features
+
+pl.figure()
+pl.title("Fish trajectory")
+pl.plot(x, y)
+pl.plot(x[event_start_indices], y[event_start_indices], 'ro')
+pl.show()
+
+pl.figure()
+pl.title("Rolling variance")
+pl.plot(t, data_rolling_var)
+pl.plot(t[event_start_indices], data_rolling_var[event_start_indices], 'ro')
+
+pl.figure()
+pl.title("Accumulated path")
+pl.plot(t[1:], accumulated_path)
+pl.plot(t[event_start_indices], accumulated_path[event_start_indices], 'ro')
+
+pl.figure()
+pl.title("Accumulated angle")
 pl.plot(t, accummulated_ang)
 pl.plot(t[event_start_indices], accummulated_ang[event_start_indices], 'ro')
-#pl.plot(t[event_end_indices], accummulated_ang[event_end_indices], 'go')
 
-pl.plot(t, data_rolling_var)
+a,b = np.histogram(bout_path_changes, bins=np.linspace(0, 100, 30), density=True)
+pl.figure()
+pl.title("Swim forward angle histogram densities")
+pl.plot(b[1:], a)
+print("Median forward swims: ", np.nanmedian(np.abs(bout_path_changes)))
+
+# plot the histogram of turning angles (density plot, could be averaged over multiple fish)
+a, b = np.histogram(bout_angle_changes, bins=np.linspace(-60, 60, 30), density=True)
+print("Turn angle histogram densities", a)
+pl.figure()
+pl.title("Turn angle histogram densities")
+pl.plot(b[1:], a)
+print("Median absolute turn angle:", np.nanmedian(np.abs(bout_angle_changes)))
 
 ### Median to center
 center_distance = np.sqrt((x-352)**2 + (y-352)**2)
-print("Median distance to the center")
-print(np.nanmedian(center_distance))
-
+print("Median distance to the center: ", np.nanmedian(center_distance))
 
 ##################
-print("Average interbout interval")
-print(np.nanmedian(interbout_intervals))
+print("Average interbout interval: ", np.nanmedian(interbout_intervals))
 
-a,b = np.histogram(interbout_intervals, bins=np.linspace(0, 3, 30))
+a,b = np.histogram(interbout_intervals, bins=np.linspace(0, 3, 30), density=True)
 pl.figure()
+pl.title("Interbout interval histograms")
 pl.plot(b[1:], a)
+print("Interbout interval densities: ", a)
 pl.show()
 
