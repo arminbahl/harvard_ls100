@@ -4,28 +4,6 @@ matplotlib.use('qt5agg')
 import pylab as pl
 import pandas as pd
 
-def find_events(data, dt, window, start_threshold, end_threshold):
-
-    data_rolling_var = pd.rolling_var(data, window=int(window / dt), center=True)
-
-
-    event_start_indices = np.where((data_rolling_var[:-1] <= start_threshold) &
-                                   (data_rolling_var[1:] > start_threshold))[0].tolist()
-    event_end_indices = []
-
-    i = 0
-    while i < len(event_start_indices):
-
-        ind = np.where(data_rolling_var[event_start_indices[i]:] < end_threshold)[0]
-
-        if len(ind) > 0:
-            event_end_indices.append(event_start_indices[i] + ind[0])
-            i += 1
-        else:
-            event_start_indices.pop(i) # if we did not find an end, the beginning is also invalid
-
-    return data_rolling_var, np.array(event_start_indices), np.array(event_end_indices)
-
 
 fish_data = np.load("/Users/arminbahl/Desktop/fish15_0321_tlab_5dpf_extracted_x_y_ang.npy")
 
@@ -41,13 +19,11 @@ accummulated_ang = fish_data[:, 4]
 accumulated_path = np.sqrt(np.diff(x)**2 + np.diff(y)**2).cumsum()
 dt = np.diff(t).mean()
 
-
 # find events
+data_rolling_var = pd.rolling_var(accummulated_ang, window=int(0.05 / dt), center=True)
 
-data_rolling_var, event_start_indices, event_end_indices = \
-    find_events(accummulated_ang, dt, window=0.05, start_threshold=10, end_threshold=5)
-
-# Comment: event_end_indices is faulty, don't use this for now ....
+event_start_indices = np.array(np.where((data_rolling_var[:-1] <= 10) &
+                                        (data_rolling_var[1:] > 10))[0])
 
 bout_start_times = t[event_start_indices]
 
