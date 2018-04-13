@@ -65,10 +65,10 @@ pl.plot(t[event_start_indices], accummulated_ang[event_start_indices], 'ro')
 ##################
 a,b = np.histogram(bout_path_changes, bins=np.linspace(0, 100, 30), density=True)
 pl.figure()
-pl.title("Swim forward angle histogram densities")
+pl.title("Swim forward histogram densities")
 pl.plot(b[1:], a)
-print("Swim forward angle histogram bins: ", b[1:])
-print("Swim forward angle histogram densities: ", a)
+print("Swims forward histogram bins: ", b[1:])
+print("Swims forward histogram densities: ", a)
 print("Median forward swims: ", np.nanmedian(np.abs(bout_path_changes)))
 print("\n\n")
 
@@ -77,8 +77,8 @@ a, b = np.histogram(bout_angle_changes, bins=np.linspace(-60, 60, 30), density=T
 pl.figure()
 pl.title("Turn angle histogram densities")
 pl.plot(b[1:], a)
-print("Turn angle histogram bins", b[1:])
-print("Turn angle histogram densities", a)
+print("Turn angle histogram bins: ", b[1:])
+print("Turn angle histogram densities: ", a)
 print("Median absolute turn angle:", np.nanmedian(np.abs(bout_angle_changes)))
 print("\n\n")
 
@@ -99,7 +99,7 @@ pl.title("Interbout interval histograms")
 pl.plot(b[1:], a)
 print("Interbout interval bins:", b[1:])
 print("Interbout interval densities: ", a)
-
+print("Median Interbout interval:", np.nanmean(interbout_intervals))
 
 
 pl.show()
