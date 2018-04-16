@@ -28,10 +28,10 @@ event_start_indices = np.array(np.where((data_rolling_var[:-1] <= 10) &
 
 bout_start_times = t[event_start_indices]
 
-bout_angle_changes = accummulated_ang[event_start_indices + int(0.5/dt)] - \
+bout_angle_changes = accummulated_ang[event_start_indices + int(0.3/dt)] - \
                      accummulated_ang[event_start_indices - int(0.02/dt)]
 
-bout_path_changes = accumulated_path[event_start_indices + int(0.5/dt)] - \
+bout_path_changes = accumulated_path[event_start_indices + int(0.3/dt)] - \
                     accumulated_path[event_start_indices - int(0.02/dt)]
 
 interbout_intervals = np.diff(bout_start_times)
