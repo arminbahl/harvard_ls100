@@ -5,8 +5,8 @@ import pylab as pl
 import pandas as pd
 from pandas import DataFrame
 
-
-fish_data = np.load("/Users/arminbahl/Desktop/fish15_0321_tlab_5dpf_extracted_x_y_ang.npy")
+fish_name = "fish15_0321_tlab_5dpf"
+fish_data = np.load("/Users/arminbahl/Desktop/{}_extracted_x_y_ang.npy".format(fish_name))
 
 print(".........................")
 print("This is fish {}".format(fish_data))
@@ -117,7 +117,7 @@ dframe = DataFrame({"Swims forward bins: ": swims_forward_bins[1:],
                     'Interbout interval bins:': interbout_interval_bins[1:],
                     'Interbout interval densities:': interbout_interval_densities})
 
-dframe.to_excel('histograms.xlsx', sheet_name='histograms', index=False)
+dframe.to_excel('{}_histograms.xlsx'.format(fish_name), sheet_name='histograms', index=False)
 
 dframe = DataFrame({"Median forward swims: ": [np.nanmedian(np.abs(bout_path_changes))],
                     "Median absolute turn angle: ": [np.nanmedian(np.abs(bout_angle_changes))],
@@ -125,7 +125,7 @@ dframe = DataFrame({"Median forward swims: ": [np.nanmedian(np.abs(bout_path_cha
                     "Median Interbout interval: ": [np.nanmean(interbout_intervals)],
                     })
 
-dframe.to_excel('medians.xlsx', sheet_name='medians', index=False)
+dframe.to_excel('{}_medians.xlsx'.format(fish_name), sheet_name='medians', index=False)
 
 
 
