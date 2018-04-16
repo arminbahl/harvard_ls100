@@ -33,7 +33,7 @@ for fish_path in fish_names:
                                             (data_rolling_var[1:] > 10))[0])
 
 
-    while event_start_indices[-1] + int(0.3/dt) >= len(accummulated_ang):
+    while event_start_indices[-1] + int(0.4/dt) >= len(accummulated_ang):
         event_start_indices = event_start_indices[:-1]
 
     bout_start_times = t[event_start_indices]
