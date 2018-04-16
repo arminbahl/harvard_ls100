@@ -28,7 +28,7 @@ event_start_indices = np.array(np.where((data_rolling_var[:-1] <= 10) &
 
 
 while event_start_indices[-1] + int(0.3/dt) >= len(accummulated_ang):
-    event_start_indices.pop(-1)
+    event_start_indices = event_start_indices[:-1]
 
 bout_start_times = t[event_start_indices]
 
