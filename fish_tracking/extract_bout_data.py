@@ -15,7 +15,7 @@ for fish_path in fish_names:
     fish_data = np.load(fish_path)
 
     print(".........................")
-    print("This is fish {}".format(fish_data))
+    print("This is fish {}".format(fish_name))
     print("Data shape", fish_data.shape)
 
     t = fish_data[:, 0]
@@ -32,9 +32,16 @@ for fish_path in fish_names:
     event_start_indices = np.array(np.where((data_rolling_var[:-1] <= 10) &
                                             (data_rolling_var[1:] > 10))[0])
 
-
+    cancel = False
     while event_start_indices[-1] + int(0.4/dt) >= len(accummulated_ang):
         event_start_indices = event_start_indices[:-1]
+
+        if len(event_start_indices) < 10:
+            print("Not swam enough, should discard that fish..")
+            cancel = True
+
+    if cancel:
+        continue
 
     bout_start_times = t[event_start_indices]
 
